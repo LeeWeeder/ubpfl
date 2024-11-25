@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option java_package = "com.leeweeder.ubpfl";
+option java_multiple_files = true;
+
+message Program {
+  int32 period = 1;
+  int32 progress = 2;
+}
+
+message Progression {
+  bool isInitialized = 1;
+  int32 unsupportedStatic = 2;
+  int32 supportedStatic = 3;
+  int32 straightArmDynamic = 4;
+  int32 bentArmDynamic = 5;
+  int32 verticalPull = 6;
+  int32 horizontalPull = 7;
+  int32 verticalPush = 8;
+  int32 horizontalPush = 9;
+  int32 weightedHorizontalPush = 10;
+}
+
+message RecentTimerDurations {
+  map<int32, int64> durations = 1;
+}
