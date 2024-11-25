@@ -27,17 +27,17 @@ plugins {
 }
 
 android {
-    namespace = "com.leeweeder.yluxthenics"
+    namespace = "com.leeweeder.luxthenics"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.leeweeder.yluxthenics"
+        applicationId = "com.leeweeder.luxthenics"
         minSdk = 34
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "com.leeweeder.yluxthenics.HiltTestRunner"
+        testInstrumentationRunner = "com.leeweeder.luxthenics.HiltTestRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
