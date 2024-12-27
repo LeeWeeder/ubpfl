@@ -10,7 +10,7 @@ private const val PREPARATION_WEEK_NUMBER = 1
 
 private const val WEEKLY_NUMBER_OF_WORKOUTS = 4
 
-sealed class Cycle {
+sealed class Mesocycle {
     abstract val numberOfWeeks: Int
     abstract val plan: List<List<Workout>>
     abstract val name: String
@@ -66,7 +66,7 @@ sealed class Cycle {
         }
     }
 
-    data object Hypertrophy : Cycle() {
+    data object Hypertrophy : Mesocycle() {
 
         /**
          * Build a hypertrophy workout.
@@ -222,7 +222,7 @@ sealed class Cycle {
         override val color = extended.hypertrophy
     }
 
-    data object Skill : Cycle() {
+    data object Skill : Mesocycle() {
         private fun buildSkillWorkout(
             skill1: Workout.SkillWorkoutNumberOfSet,
             skill2: Workout.SkillWorkoutNumberOfSet,

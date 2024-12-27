@@ -1,18 +1,18 @@
 package com.leeweeder.ubpfl.feature_progression.data
 
-import com.leeweeder.ubpfl.api_program.asset.ExerciseCategory
+import com.leeweeder.ubpfl.api_program.asset.ProgressiveExercise
 import com.leeweeder.ubpfl.feature_progression.data.source.Progression
 import com.leeweeder.ubpfl.feature_progression.data.source.ProgressionDao
 import kotlinx.coroutines.flow.Flow
 
 interface ProgressionRepository {
-    fun getProgressionsStream(exerciseCategory: ExerciseCategory): Flow<List<Progression>>
+    fun getProgressionsStream(progressiveExercise: ProgressiveExercise): Flow<List<Progression>>
 
     fun getProgressionStream(id: Int): Flow<Progression?>
 
-    suspend fun getProgressions(exerciseCategory: ExerciseCategory): List<Progression>
+    suspend fun getProgressions(progressiveExercise: ProgressiveExercise): List<Progression>
 
-    suspend fun getProgressionByLevel(exerciseCategory: ExerciseCategory, level: Int): Progression
+    suspend fun getProgressionByLevel(progressiveExercise: ProgressiveExercise, level: Int): Progression
 
     suspend fun getById(id: Int): Progression?
 
@@ -28,8 +28,8 @@ interface ProgressionRepository {
 }
 
 class DefaultProgressionRepository(private val dao: ProgressionDao) : ProgressionRepository {
-    override fun getProgressionsStream(exerciseCategory: ExerciseCategory): Flow<List<Progression>> {
-        return dao.observeAll(exerciseCategory)
+    override fun getProgressionsStream(progressiveExercise: ProgressiveExercise): Flow<List<Progression>> {
+        return dao.observeAll(progressiveExercise)
     }
 
     override fun getProgressionStream(id: Int): Flow<Progression?> {
@@ -37,14 +37,14 @@ class DefaultProgressionRepository(private val dao: ProgressionDao) : Progressio
     }
 
     override suspend fun getProgressionByLevel(
-        exerciseCategory: ExerciseCategory,
+        progressiveExercise: ProgressiveExercise,
         level: Int
     ): Progression {
-        return dao.getByLevel(exerciseCategory, level)
+        return dao.getByLevel(progressiveExercise, level)
     }
 
-    override suspend fun getProgressions(exerciseCategory: ExerciseCategory): List<Progression> {
-        return dao.getAll(exerciseCategory)
+    override suspend fun getProgressions(progressiveExercise: ProgressiveExercise): List<Progression> {
+        return dao.getAll(progressiveExercise)
     }
 
     override suspend fun getById(id: Int): Progression? {

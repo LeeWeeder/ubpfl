@@ -18,11 +18,11 @@ sealed class Workout(open val count: Int) {
                     PullCategory.Vertical -> {
                         listOf(
                             ExerciseCategoryNumberOfSet(
-                                ExerciseCategory.VerticalPull,
+                                ProgressiveExercise.VerticalPull,
                                 numberOfSet.verticalPull
                             ),
                             ExerciseCategoryNumberOfSet(
-                                ExerciseCategory.HorizontalPull,
+                                ProgressiveExercise.HorizontalPull,
                                 numberOfSet.horizontalPull
                             )
                         )
@@ -31,11 +31,11 @@ sealed class Workout(open val count: Int) {
                     PullCategory.Horizontal -> {
                         listOf(
                             ExerciseCategoryNumberOfSet(
-                                ExerciseCategory.HorizontalPull,
+                                ProgressiveExercise.HorizontalPull,
                                 numberOfSet.horizontalPull
                             ),
                             ExerciseCategoryNumberOfSet(
-                                ExerciseCategory.VerticalPull,
+                                ProgressiveExercise.VerticalPull,
                                 numberOfSet.verticalPull
                             )
                         )
@@ -50,19 +50,19 @@ sealed class Workout(open val count: Int) {
             fun buildWorkout(numberOfSet: SkillWorkoutNumberOfSet): List<ExerciseCategoryNumberOfSet> {
                 return listOf(
                     ExerciseCategoryNumberOfSet(
-                        ExerciseCategory.UnsupportedStatic,
+                        ProgressiveExercise.UnsupportedStatic,
                         numberOfSet.unsupportedStatic
                     ),
                     ExerciseCategoryNumberOfSet(
-                        ExerciseCategory.SupportedStatic,
+                        ProgressiveExercise.SupportedStatic,
                         numberOfSet.supportedStatic
                     ),
                     ExerciseCategoryNumberOfSet(
-                        ExerciseCategory.StraightArmDynamic,
+                        ProgressiveExercise.StraightArmDynamic,
                         numberOfSet.straightArmDynamic
                     ),
                     ExerciseCategoryNumberOfSet(
-                        ExerciseCategory.BentArmDynamic,
+                        ProgressiveExercise.BentArmDynamic,
                         numberOfSet.bentArmDynamic
                     )
                 )
@@ -88,13 +88,13 @@ sealed class Workout(open val count: Int) {
 
     sealed class PushCategory(val exerciseCategoryNumberOfSet: ExerciseCategoryNumberOfSet) {
         data class VerticalPush(val numberOfSet: Int) :
-            PushCategory(ExerciseCategoryNumberOfSet(ExerciseCategory.VerticalPush, numberOfSet))
+            PushCategory(ExerciseCategoryNumberOfSet(ProgressiveExercise.VerticalPush, numberOfSet))
 
         data class HorizontalPush(val numberOfSet: Int) :
-            PushCategory(ExerciseCategoryNumberOfSet(ExerciseCategory.HorizontalPush, numberOfSet))
+            PushCategory(ExerciseCategoryNumberOfSet(ProgressiveExercise.HorizontalPush, numberOfSet))
 
         data class WeightedHorizontalPush(val numberOfSet: Int) :
-            PushCategory(ExerciseCategoryNumberOfSet(ExerciseCategory.WeightedHorizontalPush, numberOfSet))
+            PushCategory(ExerciseCategoryNumberOfSet(ProgressiveExercise.WeightedHorizontalPush, numberOfSet))
     }
 
     protected fun List<ExerciseCategoryNumberOfSet>.addPushCategory(pushCategory: PushCategory): List<ExerciseCategoryNumberOfSet> {

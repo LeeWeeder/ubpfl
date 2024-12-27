@@ -7,7 +7,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.leeweeder.ubpfl.api_program.asset.ExerciseCategory
+import com.leeweeder.ubpfl.api_program.asset.ProgressiveExercise
 import com.leeweeder.ubpfl.data.DataStoreRepository
 import com.leeweeder.ubpfl.data.getLevelByExerciseCategory
 import com.leeweeder.ubpfl.feature_progression.data.ProgressionRepository
@@ -38,8 +38,8 @@ class ProgressionSelectionViewModel @Inject constructor(
     private val progressionRepository: ProgressionRepository
 ) : ViewModel() {
     private val _exerciseCategory =
-        mutableStateOf(savedStateHandle.toRoute<Screen.ProgressionSelection>().exerciseCategory)
-    val exerciseCategory: State<ExerciseCategory> = _exerciseCategory
+        mutableStateOf(savedStateHandle.toRoute<Screen.ProgressionSelection>().progressiveExercise)
+    val progressiveExercise: State<ProgressiveExercise> = _exerciseCategory
 
     private val _temporarilySelectedProgression = mutableStateOf<Progression?>(null)
     val temporarilySelectedProgression: State<Progression?> = _temporarilySelectedProgression
@@ -80,7 +80,7 @@ class ProgressionSelectionViewModel @Inject constructor(
                 viewModelScope.launch {
                     temporarilySelectedProgression.value?.let {
                         dataStoreRepository.setProgressionLevel(
-                            exerciseCategory.value,
+                            progressiveExercise.value,
                             level = it.level
                         )
                     }

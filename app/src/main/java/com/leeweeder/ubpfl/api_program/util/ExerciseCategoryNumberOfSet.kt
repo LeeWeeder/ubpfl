@@ -1,8 +1,8 @@
 package com.leeweeder.ubpfl.api_program.util
 
-import com.leeweeder.ubpfl.api_program.asset.ExerciseCategory
+import com.leeweeder.ubpfl.api_program.asset.ProgressiveExercise
 
 data class ExerciseCategoryNumberOfSet(
-    val exerciseCategory: ExerciseCategory,
+    val progressiveExercise: ProgressiveExercise,
     val numberOfSet: Int
 )

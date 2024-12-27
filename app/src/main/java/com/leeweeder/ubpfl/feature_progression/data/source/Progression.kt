@@ -3,20 +3,20 @@ package com.leeweeder.ubpfl.feature_progression.data.source
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.leeweeder.ubpfl.api_program.asset.ExerciseCategory
+import com.leeweeder.ubpfl.api_program.asset.ProgressiveExercise
 
 @Entity(indices = [
     Index(
-        value = ["exerciseCategory", "level"],
+        value = ["progressiveExercise", "level"],
         unique = true
     ),
     Index(
-        value = ["exerciseCategory", "name"],
+        value = ["progressiveExercise", "name"],
         unique = true
     )
 ])
 data class Progression(
-    val exerciseCategory: ExerciseCategory,
+    val progressiveExercise: ProgressiveExercise,
     val level: Int,
     val name: String,
     val isMileStone: Boolean = false

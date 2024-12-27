@@ -3,22 +3,22 @@ package com.leeweeder.ubpfl.feature_progression.data.source
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import com.leeweeder.ubpfl.api_program.asset.ExerciseCategory
+import com.leeweeder.ubpfl.api_program.asset.ProgressiveExercise
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ProgressionDao {
-    @Query("SELECT * FROM progression WHERE exerciseCategory = :exerciseCategory ORDER BY level")
-    fun observeAll(exerciseCategory: ExerciseCategory): Flow<List<Progression>>
+    @Query("SELECT * FROM progression WHERE progressiveExercise = :progressiveExercise ORDER BY level")
+    fun observeAll(progressiveExercise: ProgressiveExercise): Flow<List<Progression>>
 
     @Query("SELECT * FROM progression WHERE id = :id")
     fun observeById(id: Int): Flow<Progression?>
 
-    @Query("SELECT * FROM progression WHERE exerciseCategory = :exerciseCategory ORDER BY level")
-    suspend fun getAll(exerciseCategory: ExerciseCategory): List<Progression>
+    @Query("SELECT * FROM progression WHERE progressiveExercise = :progressiveExercise ORDER BY level")
+    suspend fun getAll(progressiveExercise: ProgressiveExercise): List<Progression>
 
-    @Query("SELECT * FROM progression WHERE exerciseCategory = :exerciseCategory AND level = :level")
-    suspend fun getByLevel(exerciseCategory: ExerciseCategory, level: Int): Progression
+    @Query("SELECT * FROM progression WHERE progressiveExercise = :progressiveExercise AND level = :level")
+    suspend fun getByLevel(progressiveExercise: ProgressiveExercise, level: Int): Progression
 
     @Query("SELECT * FROM progression WHERE id = :id")
     suspend fun getById(id: Int): Progression?

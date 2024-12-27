@@ -9,24 +9,24 @@ import androidx.datastore.dataStore
 import com.google.protobuf.InvalidProtocolBufferException
 import com.leeweeder.ubpfl.Program
 import com.leeweeder.ubpfl.Progression
-import com.leeweeder.ubpfl.api_program.asset.ExerciseCategory
-import com.leeweeder.ubpfl.api_program.asset.Period
+import com.leeweeder.ubpfl.api_program.asset.Macrocycle
+import com.leeweeder.ubpfl.api_program.asset.ProgressiveExercise
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import java.io.InputStream
 import java.io.OutputStream
 
 interface DataStoreRepository {
-    val programFlow: Flow<Program>
+    val macrocyleFlow: Flow<Program>
     val progressionFlow: Flow<Progression>
 
-    suspend fun setPeriod(period: Period)
+    suspend fun setPeriod(period: Macrocycle)
 
     suspend fun setProgress(value: Int)
 
-    suspend fun setIsInitialized(value: Boolean)
+    suspend fun setInitialized(value: Boolean)
 
-    suspend fun setProgressionLevel(exerciseCategory: ExerciseCategory, level: Int)
+    suspend fun setProgressionLevel(progressiveExercise: ProgressiveExercise, level: Int)
 }
 
 private val Context.programDataStore: DataStore<Program> by dataStore(
@@ -41,7 +41,7 @@ class DefaultDataStoreRepository(context: Context) : DataStoreRepository {
     private val programDataStore = context.programDataStore
     private val progressionDataStore = context.progressionDataStore
 
-    override val programFlow: Flow<Program> = programDataStore.data.catch { exception ->
+    override val macrocyleFlow: Flow<Program> = programDataStore.data.catch { exception ->
             if (exception is IOException) {
                 emit(Program.getDefaultInstance())
             } else {
@@ -56,7 +56,7 @@ class DefaultDataStoreRepository(context: Context) : DataStoreRepository {
             }
         }
 
-    override suspend fun setPeriod(period: Period) {
+    override suspend fun setPeriod(period: Macrocycle) {
         programDataStore.updateData { preferences ->
             preferences.toBuilder().setPeriod(period.ordinal).build()
         }
@@ -68,26 +68,26 @@ class DefaultDataStoreRepository(context: Context) : DataStoreRepository {
         }
     }
 
-    override suspend fun setIsInitialized(value: Boolean) {
+    override suspend fun setInitialized(value: Boolean) {
         progressionDataStore.updateData { preferences ->
-            preferences.toBuilder().setIsInitialized(value).build()
+            preferences.toBuilder().setInitialized(value).build()
         }
     }
 
-    override suspend fun setProgressionLevel(exerciseCategory: ExerciseCategory, level: Int) {
+    override suspend fun setProgressionLevel(progressiveExercise: ProgressiveExercise, level: Int) {
         progressionDataStore.updateData { preferences ->
             val builder = preferences.toBuilder()
 
-            when (exerciseCategory) {
-                ExerciseCategory.BentArmDynamic -> builder.setBentArmDynamic(level)
-                ExerciseCategory.HorizontalPull -> builder.setHorizontalPull(level)
-                ExerciseCategory.HorizontalPush -> builder.setHorizontalPush(level)
-                ExerciseCategory.StraightArmDynamic -> builder.setStraightArmDynamic(level)
-                ExerciseCategory.SupportedStatic -> builder.setSupportedStatic(level)
-                ExerciseCategory.UnsupportedStatic -> builder.setUnsupportedStatic(level)
-                ExerciseCategory.VerticalPull -> builder.setVerticalPull(level)
-                ExerciseCategory.VerticalPush -> builder.setVerticalPush(level)
-                ExerciseCategory.WeightedHorizontalPush -> builder.setWeightedHorizontalPush(level)
+            when (progressiveExercise) {
+                ProgressiveExercise.BentArmDynamic -> builder.setBentArmDynamic(level)
+                ProgressiveExercise.HorizontalPull -> builder.setHorizontalPull(level)
+                ProgressiveExercise.HorizontalPush -> builder.setHorizontalPush(level)
+                ProgressiveExercise.StraightArmDynamic -> builder.setStraightArmDynamic(level)
+                ProgressiveExercise.SupportedStatic -> builder.setSupportedStatic(level)
+                ProgressiveExercise.UnsupportedStatic -> builder.setUnsupportedStatic(level)
+                ProgressiveExercise.VerticalPull -> builder.setVerticalPull(level)
+                ProgressiveExercise.VerticalPush -> builder.setVerticalPush(level)
+                ProgressiveExercise.WeightedHorizontalPush -> builder.setWeightedHorizontalPush(level)
             }
 
             builder.build()
@@ -97,7 +97,7 @@ class DefaultDataStoreRepository(context: Context) : DataStoreRepository {
 
 object ProgramSerializer : Serializer<Program> {
     override val defaultValue: Program =
-        Program.getDefaultInstance().toBuilder().setProgress(0).setPeriod(Period.Start.ordinal)
+        Program.getDefaultInstance().toBuilder().setProgress(0).setPeriod(Macrocycle.Start.ordinal)
             .build()
 
     override suspend fun readFrom(input: InputStream): Program {
@@ -115,7 +115,7 @@ object ProgramSerializer : Serializer<Program> {
 
 object ProgressionSerializer : Serializer<Progression> {
     override val defaultValue: Progression
-        get() = Progression.getDefaultInstance().toBuilder().setBentArmDynamic(1)
+        get() = Progression.getDefaultInstance().toBuilder().setInitialized(false).setBentArmDynamic(1)
             .setHorizontalPull(1).setHorizontalPush(1).setStraightArmDynamic(1)
             .setSupportedStatic(1).setUnsupportedStatic(1).setVerticalPull(1).setVerticalPush(1)
             .setWeightedHorizontalPush(1).build()
@@ -133,16 +133,16 @@ object ProgressionSerializer : Serializer<Progression> {
     }
 }
 
-fun Progression.getLevelByExerciseCategory(exerciseCategory: ExerciseCategory): Int {
-    return when (exerciseCategory) {
-        ExerciseCategory.UnsupportedStatic -> this.unsupportedStatic
-        ExerciseCategory.SupportedStatic -> this.supportedStatic
-        ExerciseCategory.StraightArmDynamic -> this.straightArmDynamic
-        ExerciseCategory.BentArmDynamic -> this.bentArmDynamic
-        ExerciseCategory.VerticalPull -> this.verticalPull
-        ExerciseCategory.HorizontalPull -> this.horizontalPull
-        ExerciseCategory.VerticalPush -> this.verticalPush
-        ExerciseCategory.HorizontalPush -> this.horizontalPush
-        ExerciseCategory.WeightedHorizontalPush -> this.weightedHorizontalPush
+fun Progression.getLevelByExerciseCategory(progressiveExercise: ProgressiveExercise): Int {
+    return when (progressiveExercise) {
+        ProgressiveExercise.UnsupportedStatic -> this.unsupportedStatic
+        ProgressiveExercise.SupportedStatic -> this.supportedStatic
+        ProgressiveExercise.StraightArmDynamic -> this.straightArmDynamic
+        ProgressiveExercise.BentArmDynamic -> this.bentArmDynamic
+        ProgressiveExercise.VerticalPull -> this.verticalPull
+        ProgressiveExercise.HorizontalPull -> this.horizontalPull
+        ProgressiveExercise.VerticalPush -> this.verticalPush
+        ProgressiveExercise.HorizontalPush -> this.horizontalPush
+        ProgressiveExercise.WeightedHorizontalPush -> this.weightedHorizontalPush
     }
 }

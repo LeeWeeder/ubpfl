@@ -1,14 +1,14 @@
 package com.leeweeder.ubpfl.data.source
 
 import androidx.room.TypeConverter
-import com.leeweeder.ubpfl.api_program.asset.ExerciseCategory
+import com.leeweeder.ubpfl.api_program.asset.ProgressiveExercise
 
 class Converters {
     @TypeConverter
-    fun fromExerciseCategory(exerciseCategory: ExerciseCategory) = exerciseCategory.ordinal
+    fun fromExerciseCategory(progressiveExercise: ProgressiveExercise) = progressiveExercise.ordinal
 
     @TypeConverter
-    fun toExerciseCategory(value: Int): ExerciseCategory {
-        return ExerciseCategory.entries[value]
+    fun toExerciseCategory(value: Int): ProgressiveExercise {
+        return ProgressiveExercise.entries[value]
     }
 }
