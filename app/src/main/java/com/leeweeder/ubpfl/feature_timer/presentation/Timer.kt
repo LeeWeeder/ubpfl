@@ -202,6 +202,7 @@ class TimerState(
             },
             onTimerFinish = {
                 timerScaffoldState.setTimerSheetState(TimerSheetState.Configuration)
+                _isTimerActive.value = false
             }
         )
         timer.start()
