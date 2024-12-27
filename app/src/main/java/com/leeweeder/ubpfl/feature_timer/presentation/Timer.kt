@@ -626,9 +626,7 @@ private fun TimerProgressBar(timerState: TimerState, direction: TimerProgressDir
                     cornerRadius = cornerRadius
                 )
             }
-    ) {
-        Text("${timerState.currentTimerValue.minutes}:${timerState.currentTimerValue.seconds}, $progressAnimation, $progress, $totalDuration")
-    }
+    )
 }
 
 @Composable
