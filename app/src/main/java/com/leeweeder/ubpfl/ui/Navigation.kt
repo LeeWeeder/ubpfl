@@ -18,19 +18,12 @@ package com.leeweeder.ubpfl.ui
 
 import android.annotation.SuppressLint
 import androidx.annotation.DrawableRes
-import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -41,9 +34,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -52,7 +43,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.leeweeder.ubpfl.R
-import com.leeweeder.ubpfl.ui.preparation.PreparationScreen
 import com.leeweeder.ubpfl.ui.progression_selection.ProgressionSelectionScreen
 import com.leeweeder.ubpfl.ui.routine.RoutineScreen
 import com.leeweeder.ubpfl.ui.warm_up.WarmUpScreen
@@ -66,9 +56,7 @@ fun MainNavigation(uiState: MainActivityUiState.Success) {
     val isNavBarVisible = rememberSaveable {
         mutableStateOf(true)
     }
-    val isStartWorkoutVisible = rememberSaveable {
-        mutableStateOf(true)
-    }
+
     val navController = rememberNavController()
 
     CompositionLocalProvider(value = LocalNavController provides navController) {
@@ -77,14 +65,8 @@ fun MainNavigation(uiState: MainActivityUiState.Success) {
             isCurrentScreen(it.screen)
         }
 
-        isStartWorkoutVisible.value = isCurrentScreen(Screen.Routine)
-
         Scaffold(bottomBar = {
-            NavigationBar(
-                isNavBarVisible = isNavBarVisible.value,
-                StartWorkoutButtonState(isStartWorkoutVisible.value) {
-                    navController.navigate(Screen.Preparation)
-                })
+            NavigationBar(isNavBarVisible = isNavBarVisible.value)
         }) { paddingValues ->
             NavHost(
                 navController = navController,
@@ -99,13 +81,6 @@ fun MainNavigation(uiState: MainActivityUiState.Success) {
                 composable<Screen.Routine> {
                     RoutineScreen(
                         paddingValues = paddingValues,
-                        onNavigateToProgressionSelectionScreen = {
-                            navController.navigate(
-                                Screen.ProgressionSelection(
-                                    it
-                                )
-                            )
-                        },
                         uiState = uiState
                     )
                 }
@@ -126,20 +101,6 @@ fun MainNavigation(uiState: MainActivityUiState.Success) {
                 }
                 composable<Screen.WarmUp> {
                     WarmUpScreen()
-                }
-                composable<Screen.Preparation>(enterTransition = {
-                    slideIntoContainer(
-                        towards = AnimatedContentTransitionScope.SlideDirection.Down,
-                        animationSpec = tween(durationMillis = 500)
-                    )
-                }) {
-                    PreparationScreen(onFinishCountDown = {
-                        navController.navigate(Screen.WarmUp) {
-                            popUpTo(Screen.Routine)
-                        }
-                    }) {
-                        navController.popBackStack()
-                    }
                 }
             }
         }
@@ -172,60 +133,34 @@ data class NavigationBarItemIcon(
     @DrawableRes val selectedIcon: Int, @DrawableRes val deselectedIcon: Int
 )
 
-data class StartWorkoutButtonState(
-    val visible: Boolean,
-    val onClick: () -> Unit
-)
-
 @Composable
-fun NavigationBar(isNavBarVisible: Boolean, startWorkoutButtonState: StartWorkoutButtonState) {
+fun NavigationBar(isNavBarVisible: Boolean) {
     AnimatedVisibility(
         visible = isNavBarVisible,
         enter = slideInVertically(initialOffsetY = { it }),
         exit = slideOutVertically(targetOffsetY = { it })
     ) {
-        Column {
-            AnimatedVisibility(
-                startWorkoutButtonState.visible,
-                enter = slideInVertically(initialOffsetY = {
-                    it
-                }),
-                exit = slideOutVertically(targetOffsetY = {
-                    it
-                })
-            ) {
-                BottomAppBar(windowInsets = WindowInsets(0)) {
-                    Button(
-                        onClick = startWorkoutButtonState.onClick, modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp)
-                    ) {
-                        Text(text = "Start workout")
-                    }
-                }
-            }
-            Material3NavigationBar {
-                val navController = LocalNavController.current
+        Material3NavigationBar {
+            val navController = LocalNavController.current
 
-                NavigationBarItems.entries.forEach { item ->
-                    val selected = isCurrentScreen(item.screen)
-                    NavigationBarItem(selected = selected, onClick = {
-                        navController.navigate(item.screen) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
+            NavigationBarItems.entries.forEach { item ->
+                val selected = isCurrentScreen(item.screen)
+                NavigationBarItem(selected = selected, onClick = {
+                    navController.navigate(item.screen) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
                         }
-                    }, icon = {
-                        Icon(
-                            painter = painterResource(id = if (selected) item.icon.selectedIcon else item.icon.deselectedIcon),
-                            contentDescription = null
-                        )
-                    }, label = {
-                        Text(text = item.text)
-                    })
-                }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }, icon = {
+                    Icon(
+                        painter = painterResource(id = if (selected) item.icon.selectedIcon else item.icon.deselectedIcon),
+                        contentDescription = null
+                    )
+                }, label = {
+                    Text(text = item.text)
+                })
             }
         }
     }

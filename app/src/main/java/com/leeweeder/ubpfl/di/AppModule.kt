@@ -29,7 +29,6 @@ object AppModule {
                 AppDatabase::class.java,
                 AppDatabase.DATABASE_NAME
             )
-            .createFromAsset("ubpfl.db")
             .build()
     }
 

@@ -1,6 +1,8 @@
 package com.leeweeder.ubpfl.feature_timer.presentation
 
+import android.util.Log
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -45,14 +47,12 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
@@ -96,25 +96,28 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.leeweeder.ubpfl.R
-import com.leeweeder.ubpfl.feature_timer.data.CountDownTimer
+import com.leeweeder.ubpfl.feature_timer.CountDownTimer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimerScaffold(
-    state: TimerScaffoldState = rememberTimerScaffoldState(),
+    timerScaffoldState: TimerScaffoldState = rememberTimerScaffoldState(),
+    timerState: TimerState,
     recentTimerDurationsState: RecentTimerDurationsState,
     onTimerStart: (duration: Int) -> Unit,
+    topBar: @Composable () -> Unit,
     content: @Composable (PaddingValues) -> Unit
 ) {
-    val isTimerVisible = state.isVisible
+    val isTimerVisible = timerScaffoldState.isVisible
     LaunchedEffect(key1 = isTimerVisible) {
         // If the timer is hidden by user, hide the bottom sheet
         if (!isTimerVisible) {
-            state.hide()
+            timerScaffoldState.hide()
         } else {
-            state.show()
+            timerScaffoldState.show()
         }
     }
 
@@ -125,52 +128,8 @@ fun TimerScaffold(
     val density = LocalDensity.current
 
     BottomSheetScaffold(
-        scaffoldState = state.bottomSheetScaffoldState,
-        topBar = {
-            TopAppBar(title = {}, navigationIcon = {
-                Text(
-                    text = state.workoutDurationSeconds.toString(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 12.dp)
-                )
-            }, actions = {
-                Box(contentAlignment = Alignment.BottomEnd) {
-                    val focusManager = LocalFocusManager.current
-                    val keyboardController = LocalSoftwareKeyboardController.current
-                    FilledIconToggleButton(checked = isTimerVisible, onCheckedChange = {
-                        state.toggleVisibility(it)
-
-                        if (!it) {
-                            focusManager.clearFocus()
-                            keyboardController?.hide()
-                        }
-                    }) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.av_timer_24px),
-                            contentDescription = "Toggle timer bottom sheet visibility"
-                        )
-                    }
-                    androidx.compose.animation.AnimatedVisibility(visible = state.isTimerActive) {
-                        Box(
-                            modifier = Modifier
-                                .padding(2.dp)
-                                .border(
-                                    width = 3.dp,
-                                    color = MaterialTheme.colorScheme.surface,
-                                    shape = CircleShape
-                                )
-                                .padding(3.dp)
-                        ) {
-                            Badge(
-                                modifier = Modifier.size(8.dp),
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                }
-            })
-        },
+        scaffoldState = timerScaffoldState.bottomSheetScaffoldState,
+        topBar = topBar,
         sheetContent = {
             TimerBottomSheet(
                 recentTimerDurationsState = recentTimerDurationsState,
@@ -180,16 +139,17 @@ fun TimerScaffold(
                             layoutCoordinates.size.height.toDp()
                         }
                     },
-                state = state,
-                onTimerStart = onTimerStart
+                timerScaffoldState = timerScaffoldState,
+                onTimerStart = onTimerStart,
+                timerState = timerState
             )
         },
         sheetDragHandle = null,
-        sheetSwipeEnabled = true,
+        sheetSwipeEnabled = false,
         sheetShape = RectangleShape,
         sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
     ) { paddingValues ->
-        val bottomPadding by animateDpAsState(targetValue = if (state.isVisible) bottomSheetHeight - with(
+        val bottomPadding by animateDpAsState(targetValue = if (timerScaffoldState.isVisible) bottomSheetHeight - with(
             density
         ) {
             WindowInsets.navigationBars.getBottom(density).toDp()
@@ -205,30 +165,97 @@ fun TimerScaffold(
     }
 }
 
+/**
+ * The state for the timer.
+ *
+ * @property totalDurationSeconds The overall duration of the timer.
+ * @property currentTimerValue The current value of the timer. Will change every second if the timer is running.
+ * */
+class TimerState(
+    private val timerScaffoldState: TimerScaffoldState
+) {
+    private lateinit var timer: CountDownTimer
+    val isTimerActive: Boolean
+        get() = _isTimerActive.value
+
+    val currentTimerValue: TimerValue
+        get() = _timerValue.value
+
+    val totalDurationSeconds: Int
+        get() = _totalDurationSeconds.intValue
+
+    fun setDuration(totalDurationSeconds: Int) {
+        _totalDurationSeconds.intValue = totalDurationSeconds
+    }
+
+    fun startTimer() {
+        timerScaffoldState.setTimerSheetState(TimerSheetState.Timer)
+        timer = CountDownTimer(
+            duration = totalDurationSeconds * 1000L,
+            onTick = { secondsRemaining ->
+                _timerValue.value = TimerValue(secondsRemaining / 60, secondsRemaining % 60)
+            },
+            onTimerFinish = {
+                timerScaffoldState.setTimerSheetState(TimerSheetState.Configuration)
+            }
+        )
+        timer.start()
+        _isTimerActive.value = true
+    }
+
+    fun startPreparationTimer() {
+        timerScaffoldState.setTimerSheetState(TimerSheetState.Preparation)
+        val totalDurationSecondsTemp = _totalDurationSeconds.intValue
+        _totalDurationSeconds.intValue = 5
+        Log.d("Total duration should be 5", "${_totalDurationSeconds.intValue}")
+        timer = CountDownTimer(
+            duration = 5 * 1000L,
+            onTick = { secondsRemaining ->
+                _timerValue.value = TimerValue(secondsRemaining / 60, secondsRemaining % 60)
+            },
+            onTimerFinish = {
+                timerScaffoldState.setTimerSheetState(TimerSheetState.Timer)
+                _totalDurationSeconds.intValue = totalDurationSecondsTemp
+                startTimer()
+            }
+        )
+        timer.start()
+        _isTimerActive.value = true
+    }
+
+    fun stop() {
+        timer.cancel()
+        timerScaffoldState.setTimerSheetState(TimerSheetState.Configuration)
+        _timerValue.value = TimerValue(totalDurationSeconds / 60, totalDurationSeconds % 60)
+        _isTimerActive.value = false
+    }
+
+    private var _totalDurationSeconds = mutableIntStateOf(0)
+    private var _timerValue =
+        mutableStateOf(TimerValue(totalDurationSeconds / 60, totalDurationSeconds % 60))
+    private var _isTimerActive = mutableStateOf(false)
+}
+
+@Composable
+@ExperimentalMaterial3Api
+fun rememberTimerState(timerScaffoldState: TimerScaffoldState): TimerState {
+    return remember {
+        TimerState(
+            timerScaffoldState = timerScaffoldState
+        )
+    }
+}
+
 class TimerScaffoldState @OptIn(ExperimentalMaterial3Api::class) constructor(
-    initialWorkoutDurationSeconds: Int,
     timerSheetVisibilityState: TimerSheetVisibilityState,
     private val scope: CoroutineScope,
     val bottomSheetScaffoldState: BottomSheetScaffoldState
 ) {
-    private lateinit var timer: CountDownTimer
     val timerSheetVisibilityState: TimerSheetVisibilityState
         get() = _timerSheetVisibilityState.value
 
     val isVisible: Boolean
         get() = timerSheetVisibilityState is TimerSheetVisibilityState.Shown
-
-    var workoutDurationSeconds: Int
-        get() = _workoutDurationSeconds.intValue
-        set(value) {
-            _workoutDurationSeconds.intValue = value
-        }
-
-    val isTimerActive: Boolean
-        get() = false
-
-    val timerValue: TimerValue
-        get() = _timerValue.value
 
     val timerSheetState: TimerSheetState
         get() = _timerSheetState.value
@@ -249,12 +276,6 @@ class TimerScaffoldState @OptIn(ExperimentalMaterial3Api::class) constructor(
     }
 
     fun setTimerSheetState(state: TimerSheetState) {
-        if (state == TimerSheetState.Timer) {
-            startTimer()
-        } else if (state == TimerSheetState.Preparation) {
-            startPreparationTimer()
-        }
-
         scope.launch {
             show()
         }
@@ -262,43 +283,9 @@ class TimerScaffoldState @OptIn(ExperimentalMaterial3Api::class) constructor(
         _timerSheetState.value = state
     }
 
-    fun startTimer() {
-        timer = CountDownTimer(
-            duration = workoutDurationSeconds * 1000L,
-            onTick = { secondsRemaining ->
-                _timerValue.value = TimerValue(secondsRemaining / 60, secondsRemaining % 60)
-            },
-            onTimerFinish = {
-                setTimerSheetState(state = TimerSheetState.Configuration)
-            }
-        )
-        timer.start()
-    }
-
-    fun startPreparationTimer() {
-        timer = CountDownTimer(
-            duration = 10 * 1000L,
-            onTick = { secondsRemaining ->
-                _timerValue.value = TimerValue(secondsRemaining / 60, secondsRemaining % 60)
-            },
-            onTimerFinish = {
-                setTimerSheetState(state = TimerSheetState.Timer)
-                startTimer()
-            }
-        )
-    }
-
-    fun stop() {
-        timer.cancel()
-        setTimerSheetState(state = TimerSheetState.Configuration)
-        _timerValue.value = TimerValue(workoutDurationSeconds / 60, workoutDurationSeconds % 60)
-    }
 
     private var _timerSheetVisibilityState = mutableStateOf(timerSheetVisibilityState)
     private var _timerSheetState = mutableStateOf(TimerSheetState.Configuration)
-    private var _workoutDurationSeconds = mutableIntStateOf(initialWorkoutDurationSeconds)
-    private var _timerValue =
-        mutableStateOf(TimerValue(workoutDurationSeconds / 60, workoutDurationSeconds % 60))
 }
 
 data class TimerValue(
@@ -309,7 +296,6 @@ data class TimerValue(
 @Composable
 @ExperimentalMaterial3Api
 fun rememberTimerScaffoldState(
-    initialWorkoutDurationSeconds: Int = 0,
     initialTimerStateValue: TimerSheetVisibilityState = TimerSheetVisibilityState.Hidden
 ): TimerScaffoldState {
     val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
@@ -318,9 +304,8 @@ fun rememberTimerScaffoldState(
         )
     )
     val scope = rememberCoroutineScope()
-    return remember(initialWorkoutDurationSeconds, initialTimerStateValue) {
+    return remember(initialTimerStateValue) {
         TimerScaffoldState(
-            initialWorkoutDurationSeconds = initialWorkoutDurationSeconds,
             timerSheetVisibilityState = initialTimerStateValue,
             bottomSheetScaffoldState = bottomSheetScaffoldState,
             scope = scope
@@ -345,7 +330,8 @@ enum class TimerSheetState {
 @Composable
 private fun TimerBottomSheet(
     recentTimerDurationsState: RecentTimerDurationsState,
-    state: TimerScaffoldState,
+    timerScaffoldState: TimerScaffoldState,
+    timerState: TimerState,
     onTimerStart: (duration: Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -356,7 +342,7 @@ private fun TimerBottomSheet(
     ) {
         HorizontalDivider()
         Spacer(Modifier.height(16.dp))
-        when (state.timerSheetState) {
+        when (timerScaffoldState.timerSheetState) {
             TimerSheetState.Configuration -> {
                 AnimatedContent(
                     targetState = recentTimerDurationsState is RecentTimerDurationsState.Success,
@@ -378,7 +364,7 @@ private fun TimerBottomSheet(
                                 ) {
                                     items(recentTimerDurationsState.durations.toList()) {
                                         SuggestionChip(onClick = {
-                                            state.workoutDurationSeconds = it
+                                            timerState.setDuration(it)
                                         },
                                             label = { Text(text = it.toString() + "s") })
                                     }
@@ -390,12 +376,12 @@ private fun TimerBottomSheet(
                     }
                 }
 
-                var minutes by remember(state.workoutDurationSeconds) {
-                    mutableStateOf((state.workoutDurationSeconds / 60).toString())
+                var minutes by remember(timerState.totalDurationSeconds) {
+                    mutableStateOf((timerState.totalDurationSeconds / 60).toString())
                 }
 
-                var seconds by remember(state.workoutDurationSeconds) {
-                    mutableStateOf(if (state.workoutDurationSeconds == 0) "30" else (state.workoutDurationSeconds % 60).toString())
+                var seconds by remember(timerState.totalDurationSeconds) {
+                    mutableStateOf(if (timerState.totalDurationSeconds == 0) "30" else (timerState.totalDurationSeconds % 60).toString())
                 }
 
                 var isAutomaticallyFocused by remember { mutableStateOf(false) }
@@ -488,10 +474,12 @@ private fun TimerBottomSheet(
 
                         val duration = minutes.toInt() * 60 + seconds.toInt()
                         if (duration > 0) {
-                            state.workoutDurationSeconds = duration
-                            state.setTimerSheetState(
-                                if (shouldPreparationCountdown) TimerSheetState.Preparation else TimerSheetState.Timer
-                            )
+                            timerState.setDuration(duration)
+                            if (shouldPreparationCountdown) {
+                                timerState.startPreparationTimer()
+                            } else {
+                                timerState.startTimer()
+                            }
                             onTimerStart(duration)
                         }
                     },
@@ -502,111 +490,144 @@ private fun TimerBottomSheet(
             }
 
             TimerSheetState.Preparation -> {
-                Column {
-                    OutlinedCard {
-
-                    }
-                    Row {
-                        Button(onClick = {
-
-                        }) { Text("Pause") }
-                        Button(onClick = {
-                            state.stop()
-                        }) { Text("Stop") }
-                    }
-                }
+                TimerSheetContent(timerDirection = TimerProgressDirection.FORWARD, timerState = timerState)
             }
 
             TimerSheetState.Timer -> {
-                Column(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    val remainingTimeColor = MaterialTheme.colorScheme.tertiary
-                    val border = CardDefaults.outlinedCardBorder()
-                    val density = LocalDensity.current
-                    val cornerRadius = CornerRadius(with(density) {
-                        12.dp.toPx()
-                    })
-                    val duration = state.workoutDurationSeconds
-
-                    var isInitialization by remember {
-                        mutableStateOf(true)
-                    }
-
-                    val totalSeconds by remember {
-                        derivedStateOf {
-                            state.timerValue.minutes * 60 + state.timerValue.seconds
-                        }
-                    }
-
-                    val progress by remember {
-                        derivedStateOf {
-                            totalSeconds / duration.toFloat()
-                        }
-                    }
-
-                    val progressPercentage by animateFloatAsState(
-                        targetValue = if (totalSeconds == 0 && isInitialization) {
-                            isInitialization = false
-                            1f
-                        } else {
-                            progress
-                        },
-                        label = "Timer progress animation",
-                        animationSpec = tween(durationMillis = 1000, easing = LinearEasing)
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .height(72.dp)
-                            .fillMaxWidth()
-                            .clip(CardDefaults.outlinedShape)
-                            .drawBehind {
-                                drawRoundRect(
-                                    color = remainingTimeColor,
-                                    topLeft = Offset(0f, 0f),
-                                    size = Size(
-                                        width = progressPercentage * size.width,
-                                        size.height
-                                    ),
-                                    cornerRadius = cornerRadius
-                                )
-                                drawRoundRect(
-                                    brush = border.brush,
-                                    style = Stroke(width = with(density) { border.width.toPx() }),
-                                    cornerRadius = cornerRadius
-                                )
-                            }
-
-                    )
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = {
-
-                            },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
-                        ) { Text("Pause") }
-                        Button(
-                            onClick = {
-                                state.stop()
-                            },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                contentColor = MaterialTheme.colorScheme.onSurface
-                            )
-                        ) { Text("Stop") }
-                    }
-                }
+                TimerSheetContent(timerDirection = TimerProgressDirection.BACKWARD, timerState = timerState)
             }
         }
+    }
+}
+
+@Composable
+private fun TimerSheetContent(
+    timerDirection: TimerProgressDirection,
+    timerState: TimerState
+) {
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        TimerProgressBar(timerState, timerDirection)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            OutlinedButton(
+                onClick = {
+
+                },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
+            ) { Text("Pause") }
+            Button(
+                onClick = {
+                    timerState.stop()
+                },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
+            ) { Text("Stop") }
+        }
+    }
+}
+
+/**
+ * Specify in what way the direction of the timer progress bar goes.
+ * */
+enum class TimerProgressDirection {
+    /**
+     * The progress bar will be filled as the timer goes.
+     */
+    FORWARD,
+
+    /**
+     * The progress bar will be emptied as the timer goes.
+     * */
+    BACKWARD
+}
+
+/**
+ * A progress bar for timer
+ *
+ * @param timerState The state of the timer.
+ * @param direction The direction of the timer.
+ * */
+@Composable
+private fun TimerProgressBar(timerState: TimerState, direction: TimerProgressDirection) {
+    val remainingTimeColor = MaterialTheme.colorScheme.tertiary
+    val border = CardDefaults.outlinedCardBorder()
+    val density = LocalDensity.current
+    val cornerRadius = CornerRadius(with(density) {
+        12.dp.toPx()
+    })
+    val totalDuration by remember(timerState.totalDurationSeconds) {
+        mutableIntStateOf(timerState.totalDurationSeconds)
+    }
+
+    val currentTimerValueInSeconds by remember {
+        derivedStateOf {
+            timerState.currentTimerValue.minutes * 60 + timerState.currentTimerValue.seconds
+        }
+    }
+
+    var isInitialization by remember {
+        mutableStateOf(true)
+    }
+
+    val progress by remember {
+        derivedStateOf {
+            // If the the current timer is 1 and the total duration is 3, the progress should be 0.333333
+            // Thus, increasing timer value means increasing progress fill.
+            // Else, the progress should be 0.666666
+
+            if (direction == TimerProgressDirection.BACKWARD)
+                currentTimerValueInSeconds / totalDuration.toFloat()
+            else {
+                1f - currentTimerValueInSeconds / totalDuration.toFloat()
+            }
+        }
+    }
+
+    val progressAnimation by animateFloatAsState(
+        targetValue = if (isInitialization) {
+            isInitialization = false
+            if (direction == TimerProgressDirection.FORWARD) 0f else 1f
+        } else {
+            progress
+        },
+        label = "Timer progress animation",
+        animationSpec = tween(durationMillis = 1000, easing = LinearEasing)
+    )
+
+    Box(
+        modifier = Modifier
+            .height(72.dp)
+            .fillMaxWidth()
+            .clip(CardDefaults.outlinedShape)
+            .drawBehind {
+                drawRoundRect(
+                    color = remainingTimeColor,
+                    topLeft = Offset(0f, 0f),
+                    size = Size(
+                        width = progressAnimation * size.width,
+                        size.height
+                    ),
+                    cornerRadius = cornerRadius
+                )
+                drawRoundRect(
+                    brush = border.brush,
+                    style = Stroke(width = with(density) { border.width.toPx() }),
+                    cornerRadius = cornerRadius
+                )
+            }
+    ) {
+        Text("${timerState.currentTimerValue.minutes}:${timerState.currentTimerValue.seconds}, $progressAnimation, $progress, $totalDuration")
     }
 }
 
@@ -764,4 +785,61 @@ private fun RowScope.TimerTextField(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
+}
+
+@Composable
+fun ToggleTimerVisibilityIconButton(
+    timerScaffoldState: TimerScaffoldState,
+    timerState: TimerState
+) {
+    Box(contentAlignment = Alignment.BottomEnd) {
+        val focusManager = LocalFocusManager.current
+        val keyboardController = LocalSoftwareKeyboardController.current
+        FilledIconToggleButton(checked = timerScaffoldState.isVisible, onCheckedChange = {
+            timerScaffoldState.toggleVisibility(it)
+
+            if (!it) {
+                focusManager.clearFocus()
+                keyboardController?.hide()
+            }
+        }) {
+            Icon(
+                painter = painterResource(id = R.drawable.av_timer_24px),
+                contentDescription = "Toggle timer bottom sheet visibility"
+            )
+        }
+        AnimatedVisibility(visible = timerState.isTimerActive) {
+            Box(
+                modifier = Modifier
+                    .padding(2.dp)
+                    .border(
+                        width = 3.dp,
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = CircleShape
+                    )
+                    .padding(3.dp)
+            ) {
+                Badge(
+                    modifier = Modifier.size(8.dp),
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun WorkoutDurationText(workoutDurationSeconds: Int) {
+    Text(
+        text = String.format(
+            locale = Locale.getDefault(),
+            "%02d:%02d:%02d",
+            workoutDurationSeconds / 60 / 60,
+            workoutDurationSeconds / 60,
+            workoutDurationSeconds % 60
+        ),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = 12.dp)
+    )
 }

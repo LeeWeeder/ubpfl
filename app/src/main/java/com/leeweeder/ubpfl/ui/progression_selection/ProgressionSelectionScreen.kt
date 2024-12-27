@@ -89,7 +89,7 @@ import androidx.compose.ui.util.fastForEachIndexed
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leeweeder.ubpfl.R
-import com.leeweeder.ubpfl.api_program.asset.ExerciseCategory
+import com.leeweeder.ubpfl.api_program.asset.ProgressiveExercise
 import com.leeweeder.ubpfl.api_program.asset.formatName
 import com.leeweeder.ubpfl.feature_progression.data.source.Progression
 import kotlin.math.max
@@ -98,12 +98,12 @@ import kotlin.math.max
 fun ProgressionSelectionScreen(
     viewModel: ProgressionSelectionViewModel = hiltViewModel(), onCloseProgressionScreen: () -> Unit
 ) {
-    val exerciseCategory = viewModel.exerciseCategory.value
+    val exerciseCategory = viewModel.progressiveExercise.value
     val temporarilySelectedProgression = viewModel.temporarilySelectedProgression.value
     val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
     val onEvent = viewModel::onEvent
     ProgressionSelectionScreen(
-        exerciseCategory = exerciseCategory,
+        progressiveExercise = exerciseCategory,
         temporarilySelectedProgression = temporarilySelectedProgression,
         onCloseProgressionScreen = onCloseProgressionScreen,
         uiState = uiState,
@@ -114,7 +114,7 @@ fun ProgressionSelectionScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProgressionSelectionScreen(
-    exerciseCategory: ExerciseCategory,
+    progressiveExercise: ProgressiveExercise,
     temporarilySelectedProgression: Progression?,
     onCloseProgressionScreen: () -> Unit,
     uiState: ProgressionSelectionUiState,
@@ -130,7 +130,7 @@ fun ProgressionSelectionScreen(
 
     Scaffold(topBar = {
         Column {
-            TopAppBar(title = { Text(text = exerciseCategory.formatName()) }, navigationIcon = {
+            TopAppBar(title = { Text(text = progressiveExercise.formatName()) }, navigationIcon = {
                 IconButton(onClick = onCloseProgressionScreen) {
                     Icon(
                         painter = painterResource(id = R.drawable.close_24px),

@@ -1,6 +1,6 @@
 package com.leeweeder.ubpfl.util
 
-import com.leeweeder.ubpfl.api_program.asset.ExerciseCategory
+import com.leeweeder.ubpfl.api_program.asset.ProgressiveExercise
 import kotlinx.serialization.Serializable
 
 sealed interface Screen {
@@ -15,11 +15,8 @@ sealed interface Screen {
     data object Settings: Screen
 
     @Serializable
-    data class ProgressionSelection(val exerciseCategory: ExerciseCategory): Screen
+    data class ProgressionSelection(val progressiveExercise: ProgressiveExercise): Screen
 
     @Serializable
     data object WarmUp: Screen
-
-    @Serializable
-    data object Preparation: Screen
 }

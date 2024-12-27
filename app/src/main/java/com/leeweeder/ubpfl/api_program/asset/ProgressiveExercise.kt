@@ -1,6 +1,6 @@
 package com.leeweeder.ubpfl.api_program.asset
 
-enum class ExerciseCategory(
+enum class ProgressiveExercise(
     val volumeRange: IntRange, val type: ExerciseType
 ) {
     UnsupportedStatic(
@@ -32,7 +32,7 @@ enum class ExerciseCategory(
     )
 }
 
-fun ExerciseCategory.formatName(): String {
+fun ProgressiveExercise.formatName(): String {
     val word = this.name
     val result = StringBuilder()
     for (i in word.indices) {
@@ -43,4 +43,21 @@ fun ExerciseCategory.formatName(): String {
         }
     }
     return result.toString()
+}
+
+/**
+ * Formats the volume range of IntRange into readable format based on the type of exercise.
+ *
+ * `seconds` for [ExerciseType.Timed] and `reps` for [ExerciseType.Repetition]
+ *
+ * Examples:
+ * `volumeRange` of 1-5 of type [ExerciseType.Timed] will be formatted as `1-5 seconds`
+ * `volumeRange` of 1-5 of type [ExerciseType.Repetition] will be formatted as `1-5 reps`
+ * */
+fun ProgressiveExercise.formatVolumeRange(): String {
+    val volumeRangeText = "${this.volumeRange.first}-${this.volumeRange.last}"
+    return when (this.type) {
+        ExerciseType.Timed -> "$volumeRangeText seconds"
+        ExerciseType.Repetition -> "$volumeRangeText reps"
+    }
 }

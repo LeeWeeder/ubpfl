@@ -9,7 +9,7 @@ message Program {
 }
 
 message Progression {
-  bool isInitialized = 1;
+  bool initialized = 1;
   int32 unsupportedStatic = 2;
   int32 supportedStatic = 3;
   int32 straightArmDynamic = 4;

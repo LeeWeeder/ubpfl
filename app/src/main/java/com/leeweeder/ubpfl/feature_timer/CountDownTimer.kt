@@ -1,4 +1,4 @@
-package com.leeweeder.ubpfl.feature_timer.data
+package com.leeweeder.ubpfl.feature_timer
 
 import android.os.CountDownTimer
 
