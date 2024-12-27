@@ -75,6 +75,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -89,11 +90,15 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.leeweeder.ubpfl.R
 import com.leeweeder.ubpfl.feature_timer.CountDownTimer
@@ -291,7 +296,9 @@ class TimerScaffoldState @OptIn(ExperimentalMaterial3Api::class) constructor(
 data class TimerValue(
     val minutes: Int,
     val seconds: Int
-)
+) {
+    fun format() = String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds)
+}
 
 @Composable
 @ExperimentalMaterial3Api
@@ -490,11 +497,17 @@ private fun TimerBottomSheet(
             }
 
             TimerSheetState.Preparation -> {
-                TimerSheetContent(timerDirection = TimerProgressDirection.FORWARD, timerState = timerState)
+                TimerSheetContent(
+                    timerDirection = TimerProgressDirection.FORWARD,
+                    timerState = timerState
+                )
             }
 
             TimerSheetState.Timer -> {
-                TimerSheetContent(timerDirection = TimerProgressDirection.BACKWARD, timerState = timerState)
+                TimerSheetContent(
+                    timerDirection = TimerProgressDirection.BACKWARD,
+                    timerState = timerState
+                )
             }
         }
     }
@@ -605,6 +618,9 @@ private fun TimerProgressBar(timerState: TimerState, direction: TimerProgressDir
         animationSpec = tween(durationMillis = 1000, easing = LinearEasing)
     )
 
+    val onSurface = MaterialTheme.colorScheme.onSurface
+    val onTertiary = MaterialTheme.colorScheme.onTertiary
+
     Box(
         modifier = Modifier
             .height(72.dp)
@@ -625,8 +641,27 @@ private fun TimerProgressBar(timerState: TimerState, direction: TimerProgressDir
                     style = Stroke(width = with(density) { border.width.toPx() }),
                     cornerRadius = cornerRadius
                 )
-            }
-    )
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            buildAnnotatedString {
+                withStyle(
+                    SpanStyle(
+                        brush = Brush.horizontalGradient(
+                            progressAnimation to onTertiary,
+                            progressAnimation to onSurface
+                        )
+                    )
+                ) {
+                    append(timerState.currentTimerValue.format())
+                }
+            },
+            style = MaterialTheme.typography.displayMedium.copy(fontFamily = FontFamily.Monospace),
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+    }
 }
 
 @Composable
