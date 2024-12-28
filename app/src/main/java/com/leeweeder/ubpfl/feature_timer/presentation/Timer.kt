@@ -61,6 +61,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -183,8 +184,8 @@ class TimerState(
     val isTimerActive: Boolean
         get() = _isTimerActive.value
 
-    val currentTimerValue: TimerValue
-        get() = _timerValue.value
+    val currentTimerValue: Long
+        get() = _timerValue.longValue
 
     val totalDurationSeconds: Int
         get() = _totalDurationSeconds.intValue
@@ -197,8 +198,8 @@ class TimerState(
         timerScaffoldState.setTimerSheetState(TimerSheetState.Timer)
         timer = CountDownTimer(
             duration = totalDurationSeconds * 1000L,
-            onTick = { secondsRemaining ->
-                _timerValue.value = TimerValue(secondsRemaining / 60, secondsRemaining % 60)
+            onCountDown = { millisRemaining ->
+                _timerValue.longValue = millisRemaining
             },
             onTimerFinish = {
                 timerScaffoldState.setTimerSheetState(TimerSheetState.Configuration)
@@ -216,8 +217,8 @@ class TimerState(
         Log.d("Total duration should be 5", "${_totalDurationSeconds.intValue}")
         timer = CountDownTimer(
             duration = 5 * 1000L,
-            onTick = { secondsRemaining ->
-                _timerValue.value = TimerValue(secondsRemaining / 60, secondsRemaining % 60)
+            onCountDown = { millisRemaining ->
+                _timerValue.longValue = millisRemaining
             },
             onTimerFinish = {
                 timerScaffoldState.setTimerSheetState(TimerSheetState.Timer)
@@ -232,13 +233,12 @@ class TimerState(
     fun stop() {
         timer.cancel()
         timerScaffoldState.setTimerSheetState(TimerSheetState.Configuration)
-        _timerValue.value = TimerValue(totalDurationSeconds / 60, totalDurationSeconds % 60)
+        _timerValue.longValue = totalDurationSeconds * 1000L
         _isTimerActive.value = false
     }
 
     private var _totalDurationSeconds = mutableIntStateOf(0)
-    private var _timerValue =
-        mutableStateOf(TimerValue(totalDurationSeconds / 60, totalDurationSeconds % 60))
+    private var _timerValue = mutableLongStateOf(totalDurationSeconds * 1000L)
     private var _isTimerActive = mutableStateOf(false)
 }
 
@@ -292,13 +292,6 @@ class TimerScaffoldState @OptIn(ExperimentalMaterial3Api::class) constructor(
 
     private var _timerSheetVisibilityState = mutableStateOf(timerSheetVisibilityState)
     private var _timerSheetState = mutableStateOf(TimerSheetState.Configuration)
-}
-
-data class TimerValue(
-    val minutes: Int,
-    val seconds: Int
-) {
-    fun format() = String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds)
 }
 
 @Composable
@@ -586,7 +579,7 @@ private fun TimerProgressBar(timerState: TimerState, direction: TimerProgressDir
 
     val currentTimerValueInSeconds by remember {
         derivedStateOf {
-            timerState.currentTimerValue.minutes * 60 + timerState.currentTimerValue.seconds
+            timerState.currentTimerValue / 1000
         }
     }
 
@@ -664,6 +657,13 @@ private fun TimerProgressBar(timerState: TimerState, direction: TimerProgressDir
         )
     }
 }
+
+private fun Long.format() = String.format(
+    locale = Locale.getDefault(),
+    format = "%02d:%02d",
+    this / 1000 / 60,
+    this / 1000 % 60
+)
 
 @Composable
 private fun RowScope.TimerTextField(
