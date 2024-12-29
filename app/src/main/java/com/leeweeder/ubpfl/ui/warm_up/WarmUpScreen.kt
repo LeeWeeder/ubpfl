@@ -38,6 +38,7 @@ import com.leeweeder.ubpfl.feature_timer.presentation.RecentTimerDurationsState
 import com.leeweeder.ubpfl.feature_timer.presentation.TimerScaffold
 import com.leeweeder.ubpfl.feature_timer.presentation.TimerSheetState
 import com.leeweeder.ubpfl.feature_timer.presentation.TimerSheetVisibilityState
+import com.leeweeder.ubpfl.feature_timer.presentation.TimerUiState
 import com.leeweeder.ubpfl.feature_timer.presentation.ToggleTimerVisibilityIconButton
 import com.leeweeder.ubpfl.feature_timer.presentation.WorkoutDurationText
 import com.leeweeder.ubpfl.feature_timer.presentation.rememberTimerScaffoldState
@@ -68,11 +69,17 @@ fun WarmUpScreen(
     workoutDurationMillis: Long,
     onEvent: (WarmUpEvent) -> Unit
 ) {
-    val timerScaffoldState = rememberTimerScaffoldState(initialTimerStateValue = TimerSheetVisibilityState.Shown(state = TimerSheetState.Preparation))
+    val timerScaffoldState = rememberTimerScaffoldState(
+        initialTimerStateValue = TimerSheetVisibilityState.Shown(
+            state = TimerSheetState.Preparation(
+                TimerUiState.Started
+            )
+        )
+    )
     val timerState = rememberTimerState(timerScaffoldState)
 
     LaunchedEffect(Unit) {
-        timerState.setDuration(WorkoutConstants.warmUp.first().volume)
+        timerState.setWorkDuration(WorkoutConstants.warmUp.first().volume)
         timerState.startPreparationTimer()
     }
 

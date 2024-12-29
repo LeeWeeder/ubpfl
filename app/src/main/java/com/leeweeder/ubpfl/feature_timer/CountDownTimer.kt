@@ -4,12 +4,12 @@ import android.os.CountDownTimer
 
 open class CountDownTimer(
     duration: Long,
-    private val onTick: (secondsRemaining: Int) -> Unit,
+    private val onCountDown: (millisecondsRemaining: Long) -> Unit,
     private val onTimerFinish: () -> Unit
 ) :
-    CountDownTimer(duration, 1000L) {
+    CountDownTimer(duration, 1L) {
     override fun onTick(millisUntilFinished: Long) {
-        onTick((millisUntilFinished / 1000).toInt())
+        onCountDown(millisUntilFinished)
     }
 
     override fun onFinish() {
