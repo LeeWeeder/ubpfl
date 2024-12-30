@@ -18,8 +18,6 @@ sealed interface Screen {
         @Serializable
         data object SettingsBottomBarItem : BottomBarItemScreen
 
-    @Serializable
-    data object WarmUp: Screen
         @Serializable
         data object Companion : Screen
     }
@@ -27,6 +25,9 @@ sealed interface Screen {
     sealed interface WorkoutPlayThroughScreen : Screen {
         @Serializable
         data object WarmUpContent : Screen
+
+        @Serializable
+        data object ExerciseContent : Screen
 
         @Serializable
         data object Companion: Screen

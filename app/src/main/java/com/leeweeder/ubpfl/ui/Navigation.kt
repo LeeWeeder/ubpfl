@@ -41,7 +41,9 @@ import com.leeweeder.ubpfl.R
 import com.leeweeder.ubpfl.api_program.asset.ProgressiveExercise
 import com.leeweeder.ubpfl.ui.progression_selection.ProgressionSelectionScreen
 import com.leeweeder.ubpfl.ui.routine.RoutineScreen
-import com.leeweeder.ubpfl.ui.warm_up.WarmUpScreen
+import com.leeweeder.ubpfl.ui.workout_playthrough.WorkoutPlayThroughScaffold
+import com.leeweeder.ubpfl.ui.workout_playthrough.contents.ExerciseContent
+import com.leeweeder.ubpfl.ui.workout_playthrough.contents.WarmUpContent
 import com.leeweeder.ubpfl.util.Screen
 
 @Composable
@@ -69,59 +71,8 @@ fun MainNavigation(mainUiState: MainActivityUiState.Success) {
                 onCloseProgressionScreen = { navController.popBackStack() }
             )
         }
-        composable<Screen.WorkoutPlayThroughScreen.Companion> {
-            Column {
-                val localNavController = rememberNavController()
-                NavHost(
-                    navController = localNavController,
-                    startDestination = Screen.WorkoutPlayThroughScreen.WarmUpContent
-                ) {
-                    composable<Screen.WorkoutPlayThroughScreen.WarmUpContent> {
-                        WarmUpScreen()
-                    }
-                }
-            }
-        }
+        workoutPlayThroughScreens()
     }
-
-    /*Scaffold(bottomBar = {
-        NavigationBar(isNavBarVisible = isNavBarVisible.value)
-    }) { paddingValues ->
-        NavHost(
-            navController = navController,
-            startDestination = Screen.Routine,
-            enterTransition = {
-                EnterTransition.None
-            },
-            exitTransition = {
-                ExitTransition.None
-            }
-        ) {
-            composable<Screen.Routine> {
-                RoutineScreen(
-                    paddingValues = paddingValues,
-                    uiState = uiState
-                )
-            }
-            composable<Screen.Statistics> {
-                Column {
-                    Text(text = "Statistics Screen")
-                }
-            }
-            composable<Screen.Settings> {
-                Column {
-                    Text(text = "Settings Screen")
-                }
-            }
-            composable<Screen.ProgressionSelection> {
-                ProgressionSelectionScreen(
-                    onCloseProgressionScreen = { navController.popBackStack() }
-                )
-            }
-            composable<Screen.WarmUp> {
-                WarmUpScreen()
-            }
-        }*/
 }
 
 private fun NavGraphBuilder.bottomBarScreens(
@@ -180,6 +131,33 @@ private fun NavGraphBuilder.bottomBarScreens(
                     Column {
                         Text(text = "Settings Screen")
                     }
+                }
+            }
+        }
+    }
+}
+
+private fun NavGraphBuilder.workoutPlayThroughScreens() {
+    composable<Screen.WorkoutPlayThroughScreen.Companion> {
+        WorkoutPlayThroughScaffold { paddingValues, nestedScrollConnection ->
+            val navController = rememberNavController()
+            NavHost(
+                navController = navController,
+                startDestination = Screen.WorkoutPlayThroughScreen.WarmUpContent
+            ) {
+                composable<Screen.WorkoutPlayThroughScreen.WarmUpContent> {
+                    WarmUpContent(
+                        paddingValues = paddingValues,
+                        nestedScrollConnection = nestedScrollConnection,
+                        onNavigateToSkillSection = {
+                            navController.navigate<Screen>(Screen.WorkoutPlayThroughScreen.ExerciseContent)
+                        }
+                    )
+                }
+                composable<Screen.WorkoutPlayThroughScreen.ExerciseContent> {
+                    ExerciseContent(
+                        paddingValues = paddingValues
+                    )
                 }
             }
         }
