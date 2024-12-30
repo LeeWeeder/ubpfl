@@ -18,89 +18,168 @@ package com.leeweeder.ubpfl.ui
 
 import android.annotation.SuppressLint
 import androidx.annotation.DrawableRes
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.res.painterResource
+import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavHostController
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.leeweeder.ubpfl.R
+import com.leeweeder.ubpfl.api_program.asset.ProgressiveExercise
 import com.leeweeder.ubpfl.ui.progression_selection.ProgressionSelectionScreen
 import com.leeweeder.ubpfl.ui.routine.RoutineScreen
 import com.leeweeder.ubpfl.ui.warm_up.WarmUpScreen
 import com.leeweeder.ubpfl.util.Screen
-import androidx.compose.material3.NavigationBar as Material3NavigationBar
-
-val LocalNavController = compositionLocalOf<NavHostController> { error("NavHostController error") }
 
 @Composable
-fun MainNavigation(uiState: MainActivityUiState.Success) {
-    val isNavBarVisible = rememberSaveable {
-        mutableStateOf(true)
-    }
+fun MainNavigation(mainUiState: MainActivityUiState.Success) {
 
     val navController = rememberNavController()
 
-    CompositionLocalProvider(value = LocalNavController provides navController) {
-
-        isNavBarVisible.value = NavigationBarItems.entries.any {
-            isCurrentScreen(it.screen)
+    NavHost(
+        navController = navController,
+        startDestination = Screen.BottomBarItemScreen.Companion,
+        enterTransition = {
+            EnterTransition.None
+        },
+        exitTransition = {
+            ExitTransition.None
         }
+    ) {
+        bottomBarScreens(mainUiState = mainUiState, onNavigateToWorkoutPlayThrough = {
+            navController.navigate<Screen>(Screen.WorkoutPlayThroughScreen.Companion)
+        }, onNavigateToProgressionSelectionScreen = {
+            navController.navigate(Screen.ProgressionSelection(it))
+        })
+        composable<Screen.ProgressionSelection> {
+            ProgressionSelectionScreen(
+                onCloseProgressionScreen = { navController.popBackStack() }
+            )
+        }
+        composable<Screen.WorkoutPlayThroughScreen.Companion> {
+            Column {
+                val localNavController = rememberNavController()
+                NavHost(
+                    navController = localNavController,
+                    startDestination = Screen.WorkoutPlayThroughScreen.WarmUpContent
+                ) {
+                    composable<Screen.WorkoutPlayThroughScreen.WarmUpContent> {
+                        WarmUpScreen()
+                    }
+                }
+            }
+        }
+    }
 
-        Scaffold(bottomBar = {
-            NavigationBar(isNavBarVisible = isNavBarVisible.value)
-        }) { paddingValues ->
+    /*Scaffold(bottomBar = {
+        NavigationBar(isNavBarVisible = isNavBarVisible.value)
+    }) { paddingValues ->
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Routine,
+            enterTransition = {
+                EnterTransition.None
+            },
+            exitTransition = {
+                ExitTransition.None
+            }
+        ) {
+            composable<Screen.Routine> {
+                RoutineScreen(
+                    paddingValues = paddingValues,
+                    uiState = uiState
+                )
+            }
+            composable<Screen.Statistics> {
+                Column {
+                    Text(text = "Statistics Screen")
+                }
+            }
+            composable<Screen.Settings> {
+                Column {
+                    Text(text = "Settings Screen")
+                }
+            }
+            composable<Screen.ProgressionSelection> {
+                ProgressionSelectionScreen(
+                    onCloseProgressionScreen = { navController.popBackStack() }
+                )
+            }
+            composable<Screen.WarmUp> {
+                WarmUpScreen()
+            }
+        }*/
+}
+
+private fun NavGraphBuilder.bottomBarScreens(
+    mainUiState: MainActivityUiState.Success,
+    onNavigateToWorkoutPlayThrough: () -> Unit,
+    onNavigateToProgressionSelectionScreen: (ProgressiveExercise) -> Unit
+) {
+    composable<Screen.BottomBarItemScreen.Companion> {
+        val navController = rememberNavController()
+        Scaffold(
+            bottomBar = {
+                NavigationBar {
+                    NavigationBarItems.entries.forEach { item ->
+                        val selected = isCurrentScreen(item.screen, navController)
+                        NavigationBarItem(selected = selected, onClick = {
+                            navController.navigate(item.screen) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }, icon = {
+                            Icon(
+                                painter = painterResource(id = if (selected) item.icon.selectedIcon else item.icon.deselectedIcon),
+                                contentDescription = null
+                            )
+                        }, label = {
+                            Text(text = item.text)
+                        })
+                    }
+                }
+            }
+        ) { paddingValues ->
             NavHost(
                 navController = navController,
-                startDestination = Screen.Routine,
+                startDestination = Screen.BottomBarItemScreen.RoutineBottomBarItem,
                 enterTransition = {
                     EnterTransition.None
-                },
-                exitTransition = {
-                    ExitTransition.None
                 }
             ) {
-                composable<Screen.Routine> {
+                composable<Screen.BottomBarItemScreen.RoutineBottomBarItem> {
                     RoutineScreen(
                         paddingValues = paddingValues,
-                        uiState = uiState
+                        mainUiState = mainUiState,
+                        onStartRoutine = onNavigateToWorkoutPlayThrough,
+                        onNavigateToProgressionSelection = onNavigateToProgressionSelectionScreen
                     )
                 }
-                composable<Screen.Statistics> {
+                composable<Screen.BottomBarItemScreen.StatisticsBottomBarItem> {
                     Column {
                         Text(text = "Statistics Screen")
                     }
                 }
-                composable<Screen.Settings> {
+                composable<Screen.BottomBarItemScreen.SettingsBottomBarItem> {
                     Column {
                         Text(text = "Settings Screen")
                     }
-                }
-                composable<Screen.ProgressionSelection> {
-                    ProgressionSelectionScreen(
-                        onCloseProgressionScreen = { navController.popBackStack() }
-                    )
-                }
-                composable<Screen.WarmUp> {
-                    WarmUpScreen()
                 }
             }
         }
@@ -114,57 +193,24 @@ enum class NavigationBarItems(
         text = "Routine", icon = NavigationBarItemIcon(
             selectedIcon = R.drawable.exercise_24px_filled,
             deselectedIcon = R.drawable.exercise_24px
-        ), screen = Screen.Routine
+        ), screen = Screen.BottomBarItemScreen.RoutineBottomBarItem
     ),
     Statistics(
         text = "Statistics", icon = NavigationBarItemIcon(
             selectedIcon = R.drawable.monitoring_24px, deselectedIcon = R.drawable.monitoring_24px
-        ), screen = Screen.Statistics
+        ), screen = Screen.BottomBarItemScreen.StatisticsBottomBarItem
     ),
     Settings(
         text = "Settings", icon = NavigationBarItemIcon(
             selectedIcon = R.drawable.settings_24px_filled,
             deselectedIcon = R.drawable.settings_24px_outlined
-        ), screen = Screen.Settings
+        ), screen = Screen.BottomBarItemScreen.SettingsBottomBarItem
     ),
 }
 
 data class NavigationBarItemIcon(
     @DrawableRes val selectedIcon: Int, @DrawableRes val deselectedIcon: Int
 )
-
-@Composable
-fun NavigationBar(isNavBarVisible: Boolean) {
-    AnimatedVisibility(
-        visible = isNavBarVisible,
-        enter = slideInVertically(initialOffsetY = { it }),
-        exit = slideOutVertically(targetOffsetY = { it })
-    ) {
-        Material3NavigationBar {
-            val navController = LocalNavController.current
-
-            NavigationBarItems.entries.forEach { item ->
-                val selected = isCurrentScreen(item.screen)
-                NavigationBarItem(selected = selected, onClick = {
-                    navController.navigate(item.screen) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }, icon = {
-                    Icon(
-                        painter = painterResource(id = if (selected) item.icon.selectedIcon else item.icon.deselectedIcon),
-                        contentDescription = null
-                    )
-                }, label = {
-                    Text(text = item.text)
-                })
-            }
-        }
-    }
-}
 
 @SuppressLint("RestrictedApi")
 @Composable
@@ -175,8 +221,7 @@ fun NavigationBar(isNavBarVisible: Boolean) {
  *
  * @return true if current screen is the given screen
  * */
-private fun isCurrentScreen(screen: Screen): Boolean {
-    val navController = LocalNavController.current
+private fun isCurrentScreen(screen: Screen, navController: NavController): Boolean {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
 
     val currentDestination = navBackStackEntry?.destination

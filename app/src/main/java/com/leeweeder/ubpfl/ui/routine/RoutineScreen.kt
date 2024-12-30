@@ -46,20 +46,21 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.leeweeder.ubpfl.R
-import com.leeweeder.ubpfl.ui.LocalNavController
+import com.leeweeder.ubpfl.api_program.asset.ProgressiveExercise
 import com.leeweeder.ubpfl.ui.MainActivityUiState
 import com.leeweeder.ubpfl.ui.routine.components.ExercisePreviewCard
-import com.leeweeder.ubpfl.util.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoutineScreen(
-    uiState: MainActivityUiState.Success,
+    mainUiState: MainActivityUiState.Success,
+    onStartRoutine: () -> Unit,
+    onNavigateToProgressionSelection: (exercise: ProgressiveExercise) -> Unit,
     paddingValues: PaddingValues
 ) {
-    val workout = uiState.workout
-    val progression = uiState.progressions
-    val progress = uiState.progress
+    val workout = mainUiState.workout
+    val progression = mainUiState.progressions
+    val progress = mainUiState.progress
 
     var fabHeight by remember { mutableStateOf(0.dp) }
 
@@ -145,7 +146,6 @@ fun RoutineScreen(
                 }
             }
         }, floatingActionButton = {
-            val navController = LocalNavController.current
             val density = LocalDensity.current
             ExtendedFloatingActionButton(text = {
                 Text("Start routine")
@@ -154,9 +154,7 @@ fun RoutineScreen(
                     painter = painterResource(R.drawable.exercise_24px),
                     contentDescription = null
                 )
-            }, onClick = {
-                navController.navigate<Screen>(Screen.WarmUp)
-            }, modifier = Modifier.onGloballyPositioned {
+            }, onClick = onStartRoutine, modifier = Modifier.onGloballyPositioned {
                 fabHeight = with(density) {
                     it.size.height.toDp()
                 }
@@ -180,7 +178,8 @@ fun RoutineScreen(
                         exercise = exerciseCategoryNumberOfSet.progressiveExercise,
                         numberOfSets = exerciseCategoryNumberOfSet.numberOfSet,
                         progressions = progression[exerciseCategoryNumberOfSet.progressiveExercise]?.second!!,
-                        currentProgressionLevel = progression[exerciseCategoryNumberOfSet.progressiveExercise]?.first!!
+                        currentProgressionLevel = progression[exerciseCategoryNumberOfSet.progressiveExercise]?.first!!,
+                        onClick = onNavigateToProgressionSelection
                     )
                 }
             }
