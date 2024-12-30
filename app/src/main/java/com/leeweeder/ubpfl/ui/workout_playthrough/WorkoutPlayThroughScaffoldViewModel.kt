@@ -1,8 +1,5 @@
-package com.leeweeder.ubpfl.ui.warm_up
+package com.leeweeder.ubpfl.ui.workout_playthrough
 
-import android.util.Log
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.leeweeder.ubpfl.feature_timer.data.RecentTimerDurationsRepository
@@ -16,17 +13,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class WarmUpState(
-    val isTimerVisible: Boolean = false,
-    val isTimerActive: Boolean = false
-)
-
 @HiltViewModel
-class WarmUpViewModel @Inject constructor(private val recentTimerDurationsRepository: RecentTimerDurationsRepository) :
+class WorkoutPlayThroughScaffoldViewModel @Inject constructor(private val recentTimerDurationsRepository: RecentTimerDurationsRepository) :
     ViewModel() {
-    private val _uiState = mutableStateOf(WarmUpState())
-    val uiState: State<WarmUpState> = _uiState
-
     val recentTimerDurationsState: StateFlow<RecentTimerDurationsState> =
         recentTimerDurationsRepository.recentTimerDurations.map { recentTimerDurations ->
             RecentTimerDurationsState.Success(durations = recentTimerDurations.durationsMap.entries.sortedByDescending {
@@ -34,9 +23,6 @@ class WarmUpViewModel @Inject constructor(private val recentTimerDurationsReposi
             }.map {
                 it.key
             }.toSet())
-                .apply {
-                    Log.d("WarmUpViewModel", "recentTimerDurationsState: ${this.durations}")
-                }
         }.catch {
             RecentTimerDurationsState.Error(it)
         }.stateIn(
@@ -45,15 +31,9 @@ class WarmUpViewModel @Inject constructor(private val recentTimerDurationsReposi
             RecentTimerDurationsState.Loading
         )
 
-    fun onEvent(event: WarmUpEvent) {
+    fun onEvent(event: WorkoutPlayThroughEvent) {
         when (event) {
-            is WarmUpEvent.ToggleTimerVisibility -> {
-                _uiState.value = uiState.value.copy(
-                    isTimerVisible = event.visible
-                )
-            }
-
-            is WarmUpEvent.SaveTimerDuration -> {
+            is WorkoutPlayThroughEvent.SaveTimerDuration -> {
                 viewModelScope.launch {
                     recentTimerDurationsRepository.addTimerDuration(event.duration)
                 }
@@ -62,7 +42,6 @@ class WarmUpViewModel @Inject constructor(private val recentTimerDurationsReposi
     }
 }
 
-sealed class WarmUpEvent {
-    data class ToggleTimerVisibility(val visible: Boolean) : WarmUpEvent()
-    data class SaveTimerDuration(val duration: Int) : WarmUpEvent()
+sealed class WorkoutPlayThroughEvent {
+    data class SaveTimerDuration(val duration: Int) : WorkoutPlayThroughEvent()
 }

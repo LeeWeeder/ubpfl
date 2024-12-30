@@ -17,8 +17,6 @@ import com.leeweeder.ubpfl.api_program.asset.ProgressiveExercise
 import com.leeweeder.ubpfl.api_program.asset.formatName
 import com.leeweeder.ubpfl.api_program.asset.formatVolumeRange
 import com.leeweeder.ubpfl.feature_progression.data.source.Progression
-import com.leeweeder.ubpfl.ui.LocalNavController
-import com.leeweeder.ubpfl.util.Screen
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -26,7 +24,8 @@ fun ExercisePreviewCard(
     exercise: ProgressiveExercise,
     numberOfSets: Int,
     progressions: List<Progression>,
-    currentProgressionLevel: Int
+    currentProgressionLevel: Int,
+    onClick: (exercise: ProgressiveExercise) -> Unit
 ) {
     ElevatedCard(
         modifier = Modifier
@@ -52,13 +51,12 @@ fun ExercisePreviewCard(
                     )
                 }
             }
-            val navController = LocalNavController.current
             ProgressionItem(
                 progressions.size,
                 currentProgressionLevel,
                 progressions.find { it.level == currentProgressionLevel }?.name!!,
                 modifier = Modifier.clickable {
-                    navController.navigate(Screen.ProgressionSelection(exercise))
+                    onClick(exercise)
                 }
             )
         }
